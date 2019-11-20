@@ -56,41 +56,29 @@ void HashCache::init(int n, int m) {
 }
 
 HashCache::~HashCache() {
-    cout << "0" << endl;
-
     if (NULL != data) {
         for (int i = 0; i < n; i++) {
             if (data[i] != NULL) {
                 free(data[i]);
             }
 
-            cout << "1" << endl;
-
-            // pthread_mutex_destroy(q_lock + i);
+            pthread_mutex_destroy(q_lock + i);
         }
 
         free(data);
     }
 
-    cout << "2" << endl;
-    
     if (NULL != header) {
         free(header);
     }
-
-    cout << "3" << endl;
 
     if (NULL != unused) {
         free(unused);
     }
 
-    cout << "4" << endl;
-
     if (NULL != q_lock) {
         free(q_lock);
     }
-
-    cout << "5" << endl;
 }
 
 void HashCache::get(int k, int &value) {
@@ -102,8 +90,6 @@ void HashCache::get(int k, int &value) {
 
     // 加锁
     pthread_mutex_lock(q_lock + idx);
-
-    // cout << "get idx="<< idx << " lock succ" << endl;
 
     int pos = header[idx];
     while (pos != -1 && data[idx][pos].k != k) {
@@ -137,9 +123,6 @@ void HashCache::set(int k, int value) {
     // 加锁
     pthread_mutex_lock(q_lock + idx);
 
-    // cout << "set lock idx="<< idx << " succ" << endl;
-
-
     int pos = header[idx];
     int prev = header[idx];
     while (pos != -1 && data[idx][pos].k != k) {
@@ -153,19 +136,22 @@ void HashCache::set(int k, int value) {
         if (unused[idx] >= m) {
             pos = prev;
         } else {
+            pos = unused[idx];
+
+            // 更新未使用表头
+            unused[idx] = data[idx][pos].next;
+
             // 分配使用断开链接
-            data[idx][unused[idx]].next = -1;
+            data[idx][pos].next = -1;
+
             if (unused[idx] < m) {
                 data[idx][unused[idx]].prev = -1;
             }
 
-            pos = unused[idx];
-            unused[idx] = data[idx][pos].next;
-
-
-            cout << "alloc pos=" << pos << endl;
+            // cout << "alloc pos=" << pos << endl;
         }
     }
+
 
     // 旧key
     data[idx][pos].k = k;
@@ -214,7 +200,7 @@ void HashCache::moveToHead(int idx, int pos) {
 }
 
 void HashCache::print(int idx) {
-    cout << "header[idx]=" << header[idx] << endl;
+    cout << "header[idx]=" << header[idx] << ", unused[idx]=" << unused[idx] << endl;
     for (int j = 0; j < m; j++) {
         cout << "k=" << data[idx][j].k << ", value=" << data[idx][j].value << ", prev=" << data[idx][j].prev << ", next=" << data[idx][j].next << endl;
     }
