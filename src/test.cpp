@@ -67,8 +67,8 @@ int main(int argc, char const *argv[])
 
 
     // 开始计时
-    clock_t timer = clock();
-
+    clock_t start, end;
+    start = clock();
 
     // 创建线程测试
     pthread_t* thread_handlers;
@@ -83,8 +83,8 @@ int main(int argc, char const *argv[])
     }
 
 
-    timer = clock() - timer;
-    printf("cost time: %f seconds\n", (float)(t) / CLOCKS_PER_SEC);
+    end = clock();
+    printf("cost time: %f ms\n", (double)(end - start) * (1000) / CLOCKS_PER_SEC);
 
     free(thread_handlers);
     free(testOp);
