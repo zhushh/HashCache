@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <time.h>
 
 #include <iostream>
 #include <string>
@@ -65,6 +65,11 @@ int main(int argc, char const *argv[])
 
     cache.init(n, m);
 
+
+    // 开始计时
+    clock_t timer = clock();
+
+
     // 创建线程测试
     pthread_t* thread_handlers;
     thread_handlers = (pthread_t*)malloc(thread_count*sizeof(pthread_t));
@@ -77,12 +82,14 @@ int main(int argc, char const *argv[])
         pthread_join(thread_handlers[thread], NULL);
     }
 
-    free(thread_handlers);
 
-    cout << "1" << endl;
+    timer = clock() - timer;
+    printf("cost time: %f seconds\n", (float)(t) / CLOCKS_PER_SEC);
+
+    free(thread_handlers);
     free(testOp);
 
-    cout << "2" << endl;
+    // cache.selfPrint();
     return 0;
 }
 
@@ -106,7 +113,7 @@ void* Thread_do_op(void *count) {
     long threadCount = (long)count;
     long start, end;
 
-    cout << "thread=" << threadCount << " start" << endl;
+    // cout << "thread=" << threadCount << " start" << endl;
 
     start = threadCount * op_loop;
     end = (threadCount + 1) * op_loop;
@@ -115,7 +122,7 @@ void* Thread_do_op(void *count) {
     while (start < t && start < end) {
         value = 0;
 
-        cout << "start=" << start << ", op=" << testOp[start].op << ", k=" << testOp[start].k << ", value=" << testOp[start].value << endl;
+        // cout << "start=" << start << ", op=" << testOp[start].op << ", k=" << testOp[start].k << ", value=" << testOp[start].value << endl;
 
         if (strncmp("get", testOp[start].op, sizeof("get")) == 0) 
         {
@@ -127,16 +134,4 @@ void* Thread_do_op(void *count) {
         }
         start++;
     }
-}
-
-void output(long threadCount, int cur, int k, int value, bool bingo) {
-    // 命中
-    if (bingo) 
-    {
-        cout << "thread=" << threadCount << ", start=" << cur << ", k=" << k << ", value=" << value << ", bingo!" << endl;
-    } 
-    // else 
-    // {
-    //     cout << "thread=" << threadCount << ", start=" << cur << ", k=" << k << ", not found" << endl;
-    // }
 }

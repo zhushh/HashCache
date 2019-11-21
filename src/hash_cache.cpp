@@ -207,13 +207,17 @@ void HashCache::print(int idx) {
 }
 
 
-void HashCache::printAddress() {
+void HashCache::selfPrint() {
     printf("q_lock=%x\n", q_lock);
     printf("header=%x\n", header);
     printf("unused=%x\n", unused);
     printf("data=%x\n", data);
 
+
     for (int i = 0; i < n; i ++ ) {
-        printf("i=%d, %x\n", i, data[i]);
+        printf("header[%d]=%d, unused[%d]=%d\n", i, header[i], i, unused[i]);
+        for (int j = 0; j < m; j++) {
+            printf("data[%d][%d] key=%d, value=%d, next=%d, prev=%d\n", i, j, data[i][j].k, data[i][j].value, data[i][j].next, data[i][j].prev);
+        }
     }
 }

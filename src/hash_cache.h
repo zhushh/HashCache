@@ -15,13 +15,14 @@ class HashCache
 {
 public:
     HashCache();
-    void init(int n, int m);
     HashCache(int n, int m);
     ~HashCache();
 
     void set(int k, int value);
     void get(int k, int &value);
 
+    void init(int n, int m);
+    void selfPrint();
 private:
     int m, n;
 
@@ -34,10 +35,7 @@ private:
     int hashM(int k);
     void moveToHead(int idx, int pos);
 
-
     void print(int idx);
-
-    void printAddress();
 };
 
 

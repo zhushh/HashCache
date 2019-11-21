@@ -35,7 +35,10 @@ func GetRandomNumber(max int64) int64 {
 
 func main() {
 	flag.Parse()
-	fmt.Printf("n = %d, m = %d, testCase = %d, maxKey = %d, outputfile = %s\n", *number, *slotSize, *dataSize, *maxKey, *outputfile)
+
+	kMax := int64(*maxKey)
+	numMax := int64(*maxNumber)
+	fmt.Printf("n = %d, m = %d, testCase = %d, maxKey = %d, numMax = %d, outputfile = %s\n", *number, *slotSize, *dataSize, kMax, numMax, *outputfile)
 
 	f, err := os.Create(*outputfile)
 	if err != nil {
@@ -46,11 +49,10 @@ func main() {
 
 	// 写入测试数据t，n，m
 	_, _ = f.WriteString(fmt.Sprintf("%d\t%d\t%d\n", *dataSize, *number, *slotSize))
-
 	for k := 0; k < *dataSize; k++ {
 		// 获取value
-		num := GetRandomNumber(int64(*maxNumber))
-		key := GetRandomNumber(int64(*maxKey))
+		num := GetRandomNumber(numMax) + 1
+		key := GetRandomNumber(kMax)
 
 		// 获取key
 		opNum := GetRandomNumber(num)
