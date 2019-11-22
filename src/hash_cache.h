@@ -26,10 +26,11 @@ public:
 private:
     int m, n;
 
-    pthread_mutex_t *q_lock;
+    // pthread_mutex_t *q_lock;
     Node **data;
     int *header;
     int *unused;
+    int *mutex;
 
     int hashN(int k);
     int hashM(int k);

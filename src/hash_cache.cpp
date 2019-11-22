@@ -3,18 +3,25 @@
 #include <stdlib.h>
 #include <string.h>
 #include <pthread.h>
+#include <unistd.h>
 
 
 #include <iostream>
 using std::cout;
 using std::endl;
 
+
+#define UNLOCK 0
+#define LOCK 1
+
+
 HashCache::HashCache() {
     m = n = 0;
     data = NULL;
     unused = NULL;
     header = NULL;
-    q_lock = NULL;
+    // q_lock = NULL;
+    mutex = NULL;
 }
 
 HashCache::HashCache(int n, int m) {
@@ -34,17 +41,19 @@ void HashCache::init(int n, int m) {
     this->n = n;
 
     int err;
-    q_lock = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t) * n);
+    mutex = (int*)malloc(sizeof(int) * n);
+    // q_lock = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t) * n);
     header = (int*)malloc(sizeof(int) * n);
     unused = (int*)malloc(sizeof(int) * n);
     data = (Node**)malloc(sizeof(Node*) * (n));
     for (int i = 0; i < n; i++) {
         header[i] = -1;
         unused[i] = 0;
+        mutex[i] = UNLOCK;
 
-        if ((err = pthread_mutex_init(q_lock + i, NULL)) != 0) {
-            exit(err);
-        }
+        // if ((err = pthread_mutex_init(q_lock + i, NULL)) != 0) {
+        //     exit(err);
+        // }
 
         data[i] = (Node*)malloc(sizeof(Node) * (m));
         for (int j = 0; j < m; j++) {
@@ -62,7 +71,7 @@ HashCache::~HashCache() {
                 free(data[i]);
             }
 
-            pthread_mutex_destroy(q_lock + i);
+            // pthread_mutex_destroy(q_lock + i);
         }
 
         free(data);
@@ -76,8 +85,12 @@ HashCache::~HashCache() {
         free(unused);
     }
 
-    if (NULL != q_lock) {
-        free(q_lock);
+    // if (NULL != q_lock) {
+    //     free(q_lock);
+    // }
+
+    if (NULL != mutex) {
+        free(mutex);
     }
 }
 
@@ -89,7 +102,9 @@ void HashCache::get(int k, int &value) {
     int idx = hashN(k);
 
     // 加锁
-    pthread_mutex_lock(q_lock + idx);
+    // pthread_mutex_lock(q_lock + idx);
+    while (!__sync_bool_compare_and_swap(mutex+idx, UNLOCK, LOCK))
+        usleep(100);
 
     int pos = header[idx];
     while (pos != -1 && data[idx][pos].k != k) {
@@ -99,7 +114,8 @@ void HashCache::get(int k, int &value) {
     // 未找到返回
     if (pos == -1) {
         // 释放锁
-        pthread_mutex_unlock(q_lock + idx);
+        // pthread_mutex_unlock(q_lock + idx);
+        __sync_bool_compare_and_swap(mutex+idx, LOCK, UNLOCK);
         return;
     }
 
@@ -108,7 +124,8 @@ void HashCache::get(int k, int &value) {
     moveToHead(idx, pos);
 
     // 释放锁
-    pthread_mutex_unlock(q_lock + idx);
+    // pthread_mutex_unlock(q_lock + idx);
+    __sync_bool_compare_and_swap(mutex+idx, LOCK, UNLOCK);
 
     // cout << "free idx="<< idx << " lock succ" << endl;
 }
@@ -121,7 +138,9 @@ void HashCache::set(int k, int value) {
     int idx = hashN(k);
 
     // 加锁
-    pthread_mutex_lock(q_lock + idx);
+    // pthread_mutex_lock(q_lock + idx);
+    while (!__sync_bool_compare_and_swap(mutex+idx, UNLOCK, LOCK))
+        usleep(100);
 
     int pos = header[idx];
     int prev = header[idx];
@@ -159,7 +178,8 @@ void HashCache::set(int k, int value) {
     moveToHead(idx, pos);
 
     // 释放锁
-    pthread_mutex_unlock(q_lock + idx);
+    // pthread_mutex_unlock(q_lock + idx);
+    __sync_bool_compare_and_swap(mutex+idx, LOCK, UNLOCK);
 
     // cout << "free lock idx="<< idx << " succ" << endl;
 }
@@ -208,7 +228,7 @@ void HashCache::print(int idx) {
 
 
 void HashCache::selfPrint() {
-    printf("q_lock=%x\n", q_lock);
+    // printf("q_lock=%x\n", q_lock);
     printf("header=%x\n", header);
     printf("unused=%x\n", unused);
     printf("data=%x\n", data);
